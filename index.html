@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Sankalpam - London</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff8e1; color: #3e2723; padding: 20px; text-align: center; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 10px solid #e65100; }
+        .lang-selector { margin-bottom: 25px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        button { padding: 10px 18px; border: none; border-radius: 25px; cursor: pointer; background: #efebe9; font-weight: bold; transition: 0.3s; }
+        button.active { background: #e65100; color: white; }
+        .mantra-display { background: #fafafa; padding: 25px; border-radius: 15px; border: 1px dashed #bcaaa4; font-size: 1.4rem; line-height: 2; min-height: 200px; text-align: justify; }
+        .highlight { color: #bf360c; font-weight: bold; }
+        .info { margin-top: 15px; font-size: 0.9rem; color: #8d6e63; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Sankalpam Dashboard</h2>
+    
+    <div class="lang-selector" id="controls">
+        <button onclick="changeLang('Devanagari', this)" class="active">Sanskrit</button>
+        <button onclick="changeLang('Telugu', this)">తెలుగు</button>
+        <button onclick="changeLang('Kannada', this)">ಕನ್ನಡ</button>
+        <button onclick="changeLang('Tamil', this)">தமிழ்</button>
+    </div>
+
+    <div class="mantra-display" id="output">Loading...</div>
+
+    <div class="info" id="meta-info">Location: London, UK | Timezone: GMT/BST</div>
+</div>
+
+<script type="module">
+    import { getPanchangam, Observer } from 'https://cdn.jsdelivr.net/npm/@ishubhamx/panchangam-js/+esm';
+    
+    // We'll use a simple transliteration map for our custom variables
+    const scripts = {
+        "Devanagari": {},
+        "Telugu": { "अद्य": "అద్య", "ब्रह्मणः": "బ్రహ్మణః", "मम उपात्त": "మమ ఉపాత్త", "प्रातः": "ప్రాతః" }, // Simplified map logic
+        "Kannada": { "अद्य": "ಅದ್ಯ", "ब्रह्मणः": "ಬ್ರಹ್ಮಣಃ", "मम उपात्त": "ಮಮ ಉಪಾತ್ತ", "प्रातः": "ಪ್ರಾತಃ" }
+    };
+
+    let currentScript = 'Devanagari';
+
+    async function updateSankalpam() {
+        const now = new Date();
+        const obs = new Observer(51.5074, -0.1278, 11); // London
+        const p = getPanchangam(now, obs, { timezoneOffset: now.getTimezoneOffset() * -1 });
+
+        // Base Sanskrit Text (Sourced from your verified version)
+        let baseText = `अद्य ब्रह्मणः द्वितीया परार्धे, श्वेत वराह कल्पे, वैवस्वत मन्वंतरे, कलियुगे प्रथमपादे, कुशद्वीपे, वरुण दिग्भागे, ब्रिटानिया देशे, लंडन महानगरे, टेम्स नदी तीरे, अस्मिन् वर्तमाने व्यवहारिके चांद्रमानेन ${p.samvatsara.name} नाम संवत्सरे, ${p.ayana}, ${p.ritu} ऋतौ, ${p.month.name} मासे, ${p.paksha} पक्षे, ${p.tithi.name} तिथौ, ${p.vara} वासरे, ${p.nakshatra.name} नक्षत्र युक्तायाम्, शुभयोग शुभकरण एवं गुण विशेषण विशिष्टायां अस्यां श्री शुभतिथौ मम उपात्त समस्त दुरितक्षय द्वारा श्री परमेश्वर प्रीत्यर्थं प्रातः संध्यामुपाशिष्ये।`;
+
+        // If not Devanagari, we fetch the transliterated version
+        if (currentScript !== 'Devanagari') {
+            const res = await fetch(`https://aksharamukha-plugin.vercel.app/api/transliterate?target=${currentScript}&text=${encodeURIComponent(baseText)}`);
+            const data = await res.json();
+            document.getElementById('output').innerText = data.text;
+        } else {
+            document.getElementById('output').innerText = baseText;
+        }
+    }
+
+    window.changeLang = (lang, btn) => {
+        currentScript = lang;
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateSankalpam();
+    };
+
+    updateSankalpam();
+</script>
+
+</body>
+</html>
