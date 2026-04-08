@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sankalpam London</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #fff8e1; color: #3e2723; padding: 15px; text-align: center; }
+        .container { max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border-top: 8px solid #d32f2f; }
+        .lang-selector { margin-bottom: 20px; display: flex; justify-content: center; gap: 8px; }
+        button { padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; cursor: pointer; background: #f5f5f5; font-weight: bold; }
+        button.active { background: #d32f2f; color: white; border-color: #d32f2f; }
+        .mantra-display { background: #fafafa; padding: 20px; border-radius: 10px; border: 1px solid #eee; font-size: 1.3rem; line-height: 2; text-align: justify; min-height: 150px; }
+        .highlight { color: #d32f2f; font-weight: bold; }
+        .footer { margin-top: 15px; font-size: 0.8rem; color: #888; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 id="heading">Daily Sankalpam</h2>
+    <div id="date-str" style="margin-bottom:15px; font-weight:bold;"></div>
+    
+    <div class="lang-selector">
+        <button onclick="updateLang('san', this)" class="active">Sanskrit</button>
+        <button onclick="updateLang('tel', this)">తెలుగు</button>
+        <button onclick="updateLang('kan', this)">ಕನ್ನಡ</button>
+    </div>
+
+    <div class="mantra-display" id="sankalpam-box">Generating...</div>
+
+    <div class="footer">
+        Location: London (Kusha Dweepe) | <span class="highlight">Mama Upaatta</span>
+    </div>
+</div>
+
+<script>
+    // Static Panchang Data for London (April 2026)
+    // This ensures zero loading time and no API failures.
+    const panchangData = {
+        "2026-04-08": { sam: "Parabhava", ayana: "Uttarayane", ritu: "Vasanta", maasa: "Chaitra", paksha: "Krishna", tithi: "Shashti", vara: "Budha", nak: "Moola" },
+        "2026-04-09": { sam: "Parabhava", ayana: "Uttarayane", ritu: "Vasanta", maasa: "Chaitra", paksha: "Krishna", tithi: "Saptami", vara: "Guru", nak: "Purvashada" },
+        "2026-04-10": { sam: "Parabhava", ayana: "Uttarayane", ritu: "Vasanta", maasa: "Chaitra", paksha: "Krishna", tithi: "Ashtami", vara: "Shukra", nak: "Uttarashada" },
+        // ... I will add logic to auto-calculate or you can add more rows
+    };
+
+    const translations = {
+        tel: {
+            text: "అద్య బ్రహ్మణః ద్వితీయా పరార్థే, శ్వేత వరాహ కల్పే, వైవస్వత మన్వంతరే, కలియుగే ప్రథమపాదే, కుశద్వీపే, వరుణ దిగ్భాగే, బ్రిటానియా దేశే, లండన్ మహానగరే, టేమ్స్ నదీ తీరే, అస్మిన్ వర్తమానే వ్యవహారికే చాంద్రమానేన %SAM% నామ సంవత్సరే, %AYA%, %RIT%ృతౌ, %MAA% మాసే, %PAK% పక్షే, %TIT% తిథౌ, %VAR% వాసరే, %NAK% నక్షత్ర యుక్తాయామ్, శుభయోగ శుభకరణ ఏవం గుణ విశేషణ విశిష్టాయాం అస్యాం శ్రీ శుభతిథౌ మమ ఉపాత్త సమస్త దురితక్షయ ద్వారా శ్రీ పరమేశ్వర ప్రీత్యర్థం ప్రాతః సంధ్యాముపాశిష్యే|",
+            map: { "Parabhava": "పరాభవ", "Uttarayane": "ఉత్తరాయణే", "Vasanta": "వసంత", "Chaitra": "చైత్ర", "Krishna": "కృష్ణ", "Shashti": "షష్ఠి", "Budha": "బుధ", "Moola": "మూల" }
+        },
+        san: {
+            text: "अद्य ब्रह्मणः द्वितीया परार्धे, श्वेत वराह कल्पे, वैवस्वत मन्वंतरे, कलियुगे प्रथमपादे, कुशद्वीपे, वरुण दिग्भागे, ब्रिटानिया देशे, लंडन महानगरे, टेम्स नदी तीरे, अस्मिन् वर्तमाने व्यवहारिके चांद्रमानेन %SAM% नाम संवत्सरे, %AYA%, %RIT% ऋतौ, %MAA% मासे, %PAK% पक्षे, %TIT% तिथौ, %VAR% वासरे, %NAK% नक्षत्र युक्तायाम्, शुभयोग शुभकरण एवं गुण विशेषण विशिष्टायां अस्यां श्री शुभतिथौ मम उपात्त समस्त दुरितक्षय द्वारा श्री परमेश्वर प्रीत्यर्थं प्रातः संध्यामुपाशिष्ये।",
+            map: {} 
+        }
+    };
+
+    function getTodayKey() {
+        const d = new Date();
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+    }
+
+    function updateLang(lang, btn) {
+        const key = getTodayKey();
+        const data = panchangData[key] || panchangData["2026-04-08"]; // Fallback to first day
+        
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        let template = translations[lang] ? translations[lang].text : translations['san'].text;
+        let mapping = translations[lang] ? translations[lang].map : {};
+
+        const final = template
+            .replace("%SAM%", mapping[data.sam] || data.sam)
+            .replace("%AYA%", mapping[data.ayana] || data.ayana)
+            .replace("%RIT%", mapping[data.ritu] || data.ritu)
+            .replace("%MAA%", mapping[data.maasa] || data.maasa)
+            .replace("%PAK%", mapping[data.paksha] || data.paksha)
+            .replace("%TIT%", mapping[data.tithi] || data.tithi)
+            .replace("%VAR%", mapping[data.vara] || data.vara)
+            .replace("%NAK%", mapping[data.nak] || data.nak);
+
+        document.getElementById('sankalpam-box').innerText = final;
+        document.getElementById('date-str').innerText = new Date().toDateString();
+    }
+
+    // Initialize
+    window.onload = () => {
+        updateLang('san', document.querySelector('button'));
+    };
+</script>
+
+</body>
+</html>
